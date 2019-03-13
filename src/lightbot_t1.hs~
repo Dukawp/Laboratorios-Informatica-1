@@ -1,0 +1,93 @@
+module Main where
+import Data.Char
+
+--type Board = ([String], Int, Int, Char, String)
+
+-- Duvidas
+
+main = do entrada <- getContents
+          let linhas = lines entrada
+          putStr $ validaBoard linhas
+
+validaMapa :: [String] -> (Int,Int) -> String
+validaMapa [] _ = ""
+validaMapa (h:t) (x,y) | elem ' ' h = validaBot (h:t) (x,y)
+                       | elem ' ' (head t) && validaLinha h = validaMapa t ((length h),y+1)                          
+                       | notElem ' ' (head t) && length h /= length (head t) = head t
+                       | validaLinha h = validaMapa t ((length h),y+1)
+                       | otherwise = h
+
+--Percorre a string e verifica se cada letra e minuscula ou maiuscula
+validaLinha :: String -> Bool
+validaLinha "" = True
+validaLinha (h:t) | isLower' h || isUpper h = validaLinha t 
+                  | otherwise = False
+
+--Verifica se a letra esta entre a-z
+isLower' :: Char -> Bool
+isLower' c = ord c >= ord 'a' && ord c <= ord 'z' 
+
+--Verifica se a letra esta entre A-Z
+isUpper' :: Char -> Bool
+isUpper' c = ord c >= ord 'A' && ord c <= ord 'Z' -
+
+
+validaBot :: [String] -> (Int,Int) -> String
+validaBot [] _= ""
+validaBot (h:t) pos| (validaBot' (words h) pos) && (semSep h) = validaMov t
+                   | otherwise = h
+
+semSep :: String -> Bool
+semSep [] = True
+semSep (x:xs) | (x == ' ' ) && ( xs == [] ) = True
+              | (x == ' ' ) && ((head xs) == ' ' ) = False
+              | otherwise = semSep xs
+
+--Perguntar se posicao bot começa em 1,1 ou 0.0
+validaBot' :: [String] -> (Int,Int) -> Bool 
+validaBot' [] _ = False
+validaBot' (h:t) pos | length (h:t) == 3 && validaDig h && validaDig (head t) && validaOri (last t) && read h < fst pos  && read (head t) < snd pos && read h >= 0  && read (head t) >= 0 = True --Verifica se a linha nao tem mais de 3 elementos e se as coordenadas fazem parte da board
+                     | otherwise = False
+
+-- Verifica se sao numeros
+validaDig:: String -> Bool
+validaDig [] = True
+validaDig (h:t) | isDigit h = validaDig t 
+                | otherwise = False
+
+--Verifica se contem apenas as letras "NSEO" e se contem apenas uma
+validaOri :: String -> Bool
+validaOri [] = False
+validaOri (h:t) | (elem h "NSEO") && (length (h:t) == 1) = True 
+                | otherwise = False
+
+validaMov :: [String] -> String
+validaMov [] = ""
+validaMov (h:t) | h=="" = h
+                | (validaMov' h) && (t==[])= "OK" 
+                | (validaMov' h) && (t/=[]) = head t
+                | otherwise = h
+
+-- Verifica se contem apenas os movimentos possiveis (ASEDL)
+validaMov' :: String -> Bool
+validaMov' "" = True
+validaMov' (h:t) | elem h "ASEDL" = validaMov' t 
+                 | otherwise = False
+
+--Conta a linha onde esta o erro da board
+procLinha :: [String] -> String -> Int
+procLinha [] _ = 1
+procLinha (h:t) erro | h == erro = 1
+                     | otherwise = 1+procLinha t erro
+
+
+validaBoard :: [String] -> String
+validaBoard input = let val = validaMapa input (0,0)                
+                    in if (val /= "OK")
+                           then show (procLinha input val)++"\n"
+                           else "OK\n"
+
+getPos :: String -> (Int,Int)
+getPos [] = (0,0)
+getPos input = let pos = words input
+                    in (read (head pos)::Int,read (head (tail pos))::Int)  
